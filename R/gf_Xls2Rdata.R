@@ -42,14 +42,14 @@ gf_Xls2Rdata <- function(repGF, fich) {
   print(paste0("################## Import du classeur ",basename(fich)," termin\u00E9"))
 
   # ---------- Corrections et réorganisation de tables ----------
-  Cycles <- Cycles %>%
+  Cycles <- Cycles |>
     rename("Annee"="Ann\u00E9e")
   if (dim(Cycles)[1] > 0) {
-    Cycles <- Cycles %>%
+    Cycles <- Cycles |>
       mutate(Date=as.Date(Date, format = "%d.%m.%Y"))
   }
 
-  Tiges <- Tiges %>%
+  Tiges <- Tiges |>
     mutate(Dist = round(Dist,1))
 
   # --- Tiges (données feuille Arbres)
@@ -60,12 +60,12 @@ gf_Xls2Rdata <- function(repGF, fich) {
     # aurait été oubliée dans la feuille Placettes
 
     # Mise en forme des tables arbres
-    IdArbres <- Tiges %>%
+    IdArbres <- Tiges |>
       dplyr::select(NumForet,NumPlac,NumArbre,Essence,Azimut,Dist)
     IdArbres <- dplyr::distinct(IdArbres)
     IdArbres$IdArbre <- 1:dim(IdArbres)[1]
 
-    Arbres <- left_join(Tiges,IdArbres) %>%
+    Arbres <- left_join(Tiges,IdArbres) |>
       mutate(CodeEcolo=tolower(CodeEcolo))
     ValArbres <- subset(Arbres, select=c("IdArbre",names(Arbres)[!names(Arbres) %in% names(IdArbres)]))
   } else {
@@ -87,7 +87,7 @@ gf_Xls2Rdata <- function(repGF, fich) {
   # --- Reges
   if (dim(Reges)[1] > 0) {
     Reges <- filter(Reges,
-                    !is.na(Essence)) %>%
+                    !is.na(Essence)) |>
       mutate(Recouv=ifelse(is.na(Recouv),0,Recouv),
              Class1=ifelse(is.na(Class1),0,Class1),
              Class2=ifelse(is.na(Class2),0,Class2),
@@ -99,11 +99,11 @@ gf_Xls2Rdata <- function(repGF, fich) {
   if (dim(AcctD)[1] > 0) {
     AcctD$Cycle <- 1 # l'IFN correspond au cycle 1 avant c'\u00E9tait 0
     AcctD <- group_by(AcctD,
-                      NumForet,Essence) %>%
+                      NumForet,Essence) |>
       mutate(Cycle=1,
              AcctDmoy=mean(AccD,na.rm=T),
              AcctD=ifelse(is.na(AccD),AcctDmoy,AccD),
-             AcctDmoy=NULL) %>%
+             AcctDmoy=NULL) |>
       ungroup()
   }
 
