@@ -4,16 +4,13 @@
 \alias{gf_Calculs}
 \title{Calcul des variables dendrométriques, économiques et écologiques.}
 \usage{
-gf_Calculs(TauxR = 0.03)
+gf_Calculs(tauxR)
 }
 \arguments{
 \item{TauxR}{= taux d'actualisation (0.03 par défaut)}
 }
 \value{
-La fonction construit les tables suivantes.
-
-arbres, Reges, Taillis, Reperes, BMSLineaires, BMSsup30, BMP, Codes
-Elles sont enregistrées dans le dossier Tables sous le nom : gfTablesBrutes.RData.
+La fonction construit la table Arbres.
 }
 \description{
 Cette fonction commence par calculer le poids de chaque arbre,

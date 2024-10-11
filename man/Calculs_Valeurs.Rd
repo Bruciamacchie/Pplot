@@ -4,7 +4,7 @@
 \alias{Calculs_Valeurs}
 \title{Calcul valeurs}
 \usage{
-Calculs_Valeurs(df_Arbres, df_Quals, df_Prix)
+Calculs_Valeurs(df_Arbres, df_Quals, df_Prix, tauxR)
 }
 \value{
 La fonction complète le base arbres.
