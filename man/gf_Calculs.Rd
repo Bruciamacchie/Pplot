@@ -7,7 +7,7 @@
 gf_Calculs(tauxR)
 }
 \arguments{
-\item{TauxR}{= taux d'actualisation (0.03 par défaut)}
+\item{TauxR}{= taux d'actualisation}
 }
 \value{
 La fonction construit la table Arbres.

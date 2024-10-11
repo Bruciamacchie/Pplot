@@ -5,7 +5,7 @@
 #'
 #' @return La fonction construit la table Arbres.
 #'
-#' @param TauxR = taux d'actualisation (0.03 par défaut)
+#' @param TauxR = taux d'actualisation
 #'
 #' @import tidyverse
 #'
@@ -57,9 +57,15 @@ gf_Calculs <- function(tauxR) {
   #--------------- Calculs valeurs ---------------
   arbres <- Calculs_Valeurs(arbres, Quals, Prix,tauxR)
 
-
   #--------------- Calculs valuesHA ---------------
   arbres <- Calculs_Ha(arbres)
+
+  #--------------- Note écologique ---------------
+
+  #--------------- Carbone ---------------
+
+
+
 
   #--------------- Sauvegarde ---------------
   writexl::write_xlsx(arbres, "arbres.xlsx")
