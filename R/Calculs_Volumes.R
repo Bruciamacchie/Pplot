@@ -49,7 +49,7 @@ Calculs_Volumes <- function(df_Arbres, df_Tarifs) {
 
   df_Arbres <- df_Arbres |>
     mutate(tauxV = ifelse(V==0,0,log(VSup/V)/5)) |>
-    dplyr::select(-c(TypeTarif,NumTarif,TypeTarifIFN,NumTarifIFN,VSup, delta))
+    dplyr::select(-c(TypeTarif,NumTarif,TypeTarifIFN,NumTarifIFN))
 
   return(df_Arbres)
 }

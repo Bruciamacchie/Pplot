@@ -95,17 +95,17 @@ gf_Xls2Rdata <- function(repGF, fich) {
              Rejet=ifelse(is.na(Rejet),0,Rejet),
              Abroutis=ifelse(is.na(Abroutis),0,Abroutis))
   }
-  # --- AcctD
-  if (dim(AcctD)[1] > 0) {
-    AcctD$Cycle <- 1 # l'IFN correspond au cycle 1 avant c'\u00E9tait 0
-    AcctD <- group_by(AcctD,
-                      NumForet,Essence) |>
-      mutate(Cycle=1,
-             AcctDmoy=mean(AccD,na.rm=T),
-             AcctD=ifelse(is.na(AccD),AcctDmoy,AccD),
-             AcctDmoy=NULL) |>
-      ungroup()
-  }
+  # # --- AcctD
+  # if (dim(AcctD)[1] > 0) {
+  #   AcctD$Cycle <- 1 # l'IFN correspond au cycle 1 avant c'\u00E9tait 0
+  #   AcctD <- group_by(AcctD,
+  #                     NumForet,Essence) |>
+  #     mutate(Cycle=1,
+  #            AcctDmoy=mean(AccD,na.rm=T),
+  #            AcctD=ifelse(is.na(AccD),AcctDmoy,AccD),
+  #            AcctDmoy=NULL) |>
+  #     ungroup()
+  # }
 
   # ---  Duplicata des tables Prix et Qual
   # (si plusieurs forêts mélangées, risque de redondance des notations => duplicati)

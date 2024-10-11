@@ -3,10 +3,7 @@
 #' @description Cette fonction commence par calculer le poids de chaque arbre,
 #' puis pour chacun d'eux, calcule les variables dendrométriques, économiques et écologiques ramenées à l'hectare.
 #'
-#' @return La fonction construit les tables suivantes.
-#'
-#' arbres, Reges, Taillis, Reperes, BMSLineaires, BMSsup30, BMP, Codes
-#' Elles sont enregistrées dans le dossier Tables sous le nom : gfTablesBrutes.RData.
+#' @return La fonction construit la table Arbres.
 #'
 #' @param TauxR = taux d'actualisation (0.03 par défaut)
 #'
@@ -16,13 +13,14 @@
 #' @export
 
 
-gf_Calculs <- function(TauxR=0.03) {
+gf_Calculs <- function(tauxR) {
 
   #--------------- Preambule ---------------
   if (!("gfDonneesBrutes.Rdata" %in% list.files("Tables"))) {
     stop("Utiliser au préalable la fonction gf_Xls2Rdata")
   } else {load("Tables/gfDonneesBrutes.RData")}
 
+  #--------------- Table arbres ---------------
   arbres <- IdArbres |>
     right_join(ValArbres, by="IdArbre") |>
     filter(!is.na(NumArbre)) |>
@@ -34,9 +32,15 @@ gf_Calculs <- function(TauxR=0.03) {
     filter(Diam>=7.5)
 
   #--------------- Fusion Placettes ---------------
-  # noms = c("NumForet","NumPlac","Cycle","Strate","PoidsPlacette","Pente","CoeffPente")
+  Pla <- Placettes |>
+    dplyr::select(NumForet:Miroir_Dist)
+
   arbres <- arbres |>
-    left_join(Placettes[,1:7], by=c("NumForet","NumPlac","Cycle"))
+    left_join(Pla, by=c("NumForet","NumPlac","Cycle"))
+
+  #--------------- Traitement placettes miroirs ---------------
+  arbres <- Calculs_Miroirs(arbres,Echantillonnages)
+
 
   #--------------- Calculs poids ---------------
   arbres <- Calculs_Poids(arbres,Echantillonnages)
@@ -47,11 +51,22 @@ gf_Calculs <- function(TauxR=0.03) {
   #--------------- Calculs volumes ---------------
   arbres <- Calculs_Volumes(arbres,Tarifs)
 
+  #--------------- Calculs AcctD ---------------
+  arbres <- Calculs_AcctD(arbres, Cycles)
+
+  #--------------- Calculs valeurs ---------------
+  arbres <- Calculs_Valeurs(arbres, Quals, Prix,tauxR)
+
+
+  #--------------- Calculs valuesHA ---------------
+  arbres <- Calculs_Ha(arbres)
 
   #--------------- Sauvegarde ---------------
   writexl::write_xlsx(arbres, "arbres.xlsx")
 
-
+  dir.create("Tables", showWarnings = F)
+  save(arbres,Placettes,
+       file = "Tables/gfTablesElaborees.Rdata")
 
   return(arbres)
 }
