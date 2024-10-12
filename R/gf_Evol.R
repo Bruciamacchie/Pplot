@@ -13,10 +13,14 @@
 
 
 gf_Evol <- function (df_Arbres) {
+  # df_Arbres = Arbres
 
   #--------------- Calculs Statuts ---------------
   df_Arbres <- Calculs_Statuts(df_Arbres)
 
+  #--------------- Acct placettes ---------------
+  AcctPlacettes <- AcctPlacettes(df_Arbres)
 
-  return(df_Arbres)
+
+  return(AcctPlacettes)
 }
