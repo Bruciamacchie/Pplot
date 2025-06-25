@@ -12,15 +12,15 @@
 
 
 AcctPlacettes <- function(df_Arbres) {
-  # df_Arbres = Arbres1
+  # df_Arbres = Arbres
 
   DernierCycle <- max(df_Arbres$Cycle, na.rm = T)
   PremierCycle <- min(df_Arbres$Cycle, na.rm = T)
-  période = 9
+  période = DernierCycle - PremierCycle
 
   t1 <- df_Arbres |>
     arrange(NumForet, Strate, NumPlac, NumArbre, Cycle) |>
-    group_by(Cycle, Statut,NumPlac) |>
+    group_by(NumForet, Strate, Cycle, Statut,NumPlac) |>
     summarise(Gha = sum(Gha),
               Vha = sum(Vha),
               VcHa = sum(VcHa),

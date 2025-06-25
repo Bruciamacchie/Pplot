@@ -1,0 +1,100 @@
+---
+title: "Proposition d'une typologie des peuplements"
+output: html_document
+---
+
+
+```{r Chargement, echo=F, message=F, comment=F, warning=F}
+# ----- Library
+library(FactoMineR)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(ClustOfVar)
+library(tidyr)
+library(dplyr)
+load("../Tables/gfTablesElaboreesPlac.RData")
+```
+
+
+# Typologie de peuplement pour la forêt `r Forets$Nom`
+```{r calculs, echo=F}
+DernierCycle = max(gfPla$Cycle)
+if (cycle > DernierCycle) {cycle=DernierCycle}
+# --------------- Structure et capital
+t1 <- gfPlaCatDen %>%
+  filter(NumForet==foret & Cycle==cycle) %>%
+  select(NumPlac, Cat, Gha) %>%
+  spread(Cat, Gha)
+# --------------- Essences principales et structure
+t2 <- gfPlaCatEssPrincDen %>%
+  filter(NumForet==foret & Cycle==cycle & EssPrinc !="Autres") %>%
+  mutate(Compo = paste(EssPrinc,Cat,sep="-")) %>%
+  select(NumPlac, Compo, Gha) %>%
+  spread(Compo, Gha)
+# --------------- Essences autres
+t3 <- subset(gfPlaCatEssPrincDen, NumForet==foret & Cycle==cycle & EssPrinc!="Autres")
+ListeEssPrinc <- unique(t3$EssPrinc)
+t3 <- gfPlaEssRegDen %>%
+  filter(NumForet==foret & Cycle==cycle & !EssReg %in% ListeEssPrinc) %>%
+  select(NumPlac, EssReg, Gha) %>%
+  spread(EssReg, Gha)
+# --------------- Assemblage
+t1 <- merge(t1,t2, by="NumPlac", all.x=T)
+t1 <- merge(t1,t3, by="NumPlac", all.x=T)
+t1[is.na(t1)] <- 0
+row.names(t1) <- t1[,1]
+nbcol = dim(t1)[2]
+```
+
+
+### Première proposition
+
+##### Contruction
+
+Les types ont été construits par la méthode des k-moyennes (ou k-means en anglais). L'algorithme par défaut est celui de Hartigan and Wong (1979). Les placettes sont représentées par leur numéro sur le plan factoriel des axes 1 et 2 d'une analyse en composantes principales.  
+Les variables actives utilisées sont :  
+- la surface terrière à l'hectare des PB, BM, GB et TGB toutes essences ;   
+- la surface terrière par catégorie de diamètre des essences principales ;  
+- la surface terrière des autres essences sans distinction des catégories de diamètre.
+
+```{r ACP , echo=F, fig.height=6, fig.width=7, comment=NA}
+res.pca = PCA(t1[,-1], scale.unit=TRUE, ncp=5,  graph=F)
+tab <- data.frame(NumPlac = t1[, 1],
+                  F1 = res.pca$ind$coord[,1],
+                  F2 = res.pca$ind$coord[,2])
+res <- kmeans(t1[, -1], centers=6, nstart=2)
+tab$Groupe <- res$cluster
+ggplot(tab, aes(F1,F2, color=factor(Groupe))) + geom_point(size=0.1) +
+  geom_text(aes(label=NumPlac), hjust=0, vjust=0, size=3) + 
+  theme_bw() + labs(color="Peuplt")
+```
+
+##### Clé groupe
+La clé de détermination correspond à la classification obtenue avec la méthode des k-moyennes, les groupes étant représentés sur le plan 1x2 de l'ACP déjà représenté.
+```{r CleGroupe , echo=F, fig.height=7, fig.width=7, comment=NA}
+t1$Groupe <- as.factor(res$cluster)
+model <- rpart(Groupe ~ ., data=t1, cp=.02)
+rpart.plot(model)
+```
+
+
+
+### Autres propositions
+
+##### Tableau diagonalisé
+Il a été obtenu par classification automatique en utilisant les variables actives citées précédemment. La méthode retenue est celle de Ward dont l'objectif est également d'augmenter la variance inter-classe.  
+```{r Heatmap , echo=F, fig.height=10, fig.width=7, comment=NA}
+lf = function(d) hclust(d, method="ward.D")
+t4 <- subset(t1, select=-c(NumPlac, Groupe))
+heatmap(scale(as.matrix(t4), scale=FALSE), hclustfun=lf)
+```
+
+
+##### Clé des variables
+La figure suivante fournit une classification des variables.
+```{r Tree , echo=F, fig.height=7, fig.width=7, comment=NA}
+tree <- hclustvar(t4)
+plot(tree)
+```
+

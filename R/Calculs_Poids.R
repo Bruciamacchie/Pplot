@@ -39,7 +39,7 @@ Calculs_Poids <- function(df_Arbres, df_Echantillonnages) {
       is.na(Coeff) & Diam >= DiamLim3 & Dist <= Rayon3 ~
         10000 / pi / Rayon3 ^ 2,
       # ------------ Angles
-      !is.na(Coeff) & Diam1 >= DiamLim & Diam1 >= Dist * Coeff ~
+      !is.na(Coeff) & Diam1 >= DiamLim & Diam1 >= Dist * Coeff*100 ~
         10 ^ 8 * Coeff ^ 2 / pi / Diam1 ^ 2,
       # !is.na(Coeff) & Diam >= DiamLim1 & Diam < DiamLim & Dist <= Rayon1 ~
       #   10000 / pi / Rayon1 ^ 2,

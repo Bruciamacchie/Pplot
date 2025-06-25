@@ -5,7 +5,7 @@
 #'
 #' @return La fonction construit la table Arbres.
 #'
-#' @param TauxR = taux d'actualisation
+#' @param tauxR = taux d'actualisation
 #'
 #' @import tidyverse
 #'
@@ -13,66 +13,51 @@
 #' @export
 
 
-gf_Calculs <- function(tauxR) {
+gf_Calculs <- function(fich, tauxR) {
+  setwd(dirname(fich))
+
 
   #--------------- Preambule ---------------
   if (!("gfDonneesBrutes.Rdata" %in% list.files("Tables"))) {
     stop("Utiliser au préalable la fonction gf_Xls2Rdata")
   } else {load("Tables/gfDonneesBrutes.RData")}
 
-  #--------------- Table arbres ---------------
-  arbres <- IdArbres |>
-    right_join(ValArbres, by="IdArbre") |>
-    filter(!is.na(NumArbre)) |>
-    mutate(Diam = (Diam1 + Diam2)/2,
-           Classe = floor(Diam/5+0.5)*5,
-           Cat = cut(Diam, breaks = c(0, 17.5, 27.5, 47.5, 67.5,200),
-                     labels = c("PER", "PB", "BM", "GB","TGB"), include.lowest = T, right = F)) |>
-    dplyr::select(-IdArbre) |>
-    filter(Diam>=7.5)
+  #--------------- Différentes tables ---------------
+  Arbres  <- gf_Calculs_arbres(fich, tauxR)
+  BMSl    <- Calculs_BMS_lineaire(BMSLineaires, EssReg)
+  BMSc    <- Calculs_BMS_lineaire(BMSCercles, EssReg)
+  BMS = rbind(BMSl, BMSc)
+  RegesHa   <- Calculs_Reges(Reges)
 
-  #--------------- Fusion Placettes ---------------
-  Pla <- Placettes |>
-    dplyr::select(NumForet:Miroir_Dist)
+  temp <- PCQM |>  filter(Population == "BMP")
+  BMP  <- Calcul_BMP_pcqm(temp)
 
-  arbres <- arbres |>
-    left_join(Pla, by=c("NumForet","NumPlac","Cycle"))
+  PerchesCercle <- Arbres |>
+    filter(Cat == "PER") |>
+    mutate(FH = Vha/Gha)
+  FHmoy = mean(PerchesCercle$FH, na.rm=T)
+  PerchesCercle <- PerchesCercle |>
+    dplyr::select(NumForet,NumPlac,Cycle,Essence,Azimut,Dist,Diam,Haut,Nha,Gha,Vha)
 
-  #--------------- Traitement placettes miroirs ---------------
-  arbres <- Calculs_Miroirs(arbres,Echantillonnages)
+  temp <- PCQM |>  filter(Population == "Perche")
+  PerchesPCQM  <- Calcul_perches_pcqm(temp) |>
+    dplyr::select(names(PerchesCercle)) |>
+    mutate(Vha = Gha * FHmoy)
 
+  Perches <- rbind(PerchesCercle,PerchesPCQM)
 
-  #--------------- Calculs poids ---------------
-  arbres <- Calculs_Poids(arbres,Echantillonnages)
-
-  #--------------- Calculs Gha ---------------
-  arbres <- Calculs_Gha(arbres)
-
-  #--------------- Calculs volumes ---------------
-  arbres <- Calculs_Volumes(arbres,Tarifs)
-
-  #--------------- Calculs AcctD ---------------
-  arbres <- Calculs_AcctD(arbres, Cycles)
-
-  #--------------- Calculs valeurs ---------------
-  arbres <- Calculs_Valeurs(arbres, Quals, Prix,tauxR)
-
-  #--------------- Calculs valuesHA ---------------
-  arbres <- Calculs_Ha(arbres)
-
-  #--------------- Note écologique ---------------
-
-  #--------------- Carbone ---------------
+  NoteEcolos <- dmh_split(Arbres)
 
 
 
 
   #--------------- Sauvegarde ---------------
-  writexl::write_xlsx(arbres, "arbres.xlsx")
+  # writexl::write_xlsx(arbres, "arbres.xlsx")
 
   dir.create("Tables", showWarnings = F)
-  save(arbres,Placettes,
-       file = "Tables/gfTablesElaborees.Rdata")
+  save(BMS, BMP, Perches, file = "Tables/gfTablesPCQM.Rdata")
+  save(RegesHa, file = "Tables/RegesHa.Rdata")
+  save(Arbres, file = "Tables/Arbres.Rdata")
 
   return(arbres)
 }

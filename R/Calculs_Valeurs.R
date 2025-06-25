@@ -19,11 +19,11 @@ Calculs_Valeurs <- function(df_Arbres, df_Quals, df_Prix, tauxR) {
     rename(PUSup = PU)
 
   df_Arbres <- df_Arbres  |>
-    left_join(df_Quals, by=c("Qual"="Nom")) |>
+    left_join(df_Quals, by=c("NumForet","Qual"="Nom")) |>
     mutate(Qual = ifelse(is.na(Qual), "C", Qual)) |>
     mutate(ClasseSup = Classe + 5) |>
-    left_join(df_Prix, by=c("Essence","Classe","Reg1"="Qual")) |>
-    left_join(PrixSup, by=c("Essence","ClasseSup"="Classe","Reg1"="Qual")) |>
+    left_join(df_Prix, by=c("NumForet","Essence","Classe","Reg1"="Qual")) |>
+    left_join(PrixSup, by=c("NumForet","Essence","ClasseSup"="Classe","Reg1"="Qual")) |>
     mutate(Vc = V * PU,
            tauxPU = log(PUSup/PU)/5,
            Gain = Vc*AccD*(tauxV + tauxPU),

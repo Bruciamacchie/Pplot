@@ -18,9 +18,12 @@ gf_Evol <- function (df_Arbres) {
   #--------------- Calculs Statuts ---------------
   df_Arbres <- Calculs_Statuts(df_Arbres)
 
+  #--------------- Acct arbres ---------------
+  DeltaArbres <- AcctArbres(df_Arbres)
+  save(DeltaArbres, file="Tables/DeltaArbres.Rdata")
+
   #--------------- Acct placettes ---------------
-  AcctPlacettes <- AcctPlacettes(df_Arbres)
+  EvolPlacettes <- AcctPlacettes(df_Arbres)
 
-
-  return(AcctPlacettes)
+  return(EvolPlacettes)
 }

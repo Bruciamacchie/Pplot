@@ -11,7 +11,7 @@
 #'
 
 Calculs_Statuts <- function(df_Arbres) {
-  # df_Arbres = Arbres
+  # df_Arbres = arbres
 
   DernierCycle <- max(df_Arbres$Cycle, na.rm = T)
   PremierCycle <- min(df_Arbres$Cycle, na.rm = T)
@@ -34,6 +34,12 @@ Calculs_Statuts <- function(df_Arbres) {
 
   df_Arbres <- df_Arbres |>
     left_join(df_Arbres1, by = join_by(NumForet, NumPlac, NumArbre, Cycle, Diam, Strate))
+
+  Coupes <- df_Arbres |>
+    filter(Statut == "Coupe") |>
+    dplyr::select(NumForet:Essence,Cycle,Gha, Vha:Statut)
+
+  save(Coupes, file = "Tables/Coupes.Rdata")
 
   return(df_Arbres)
 }

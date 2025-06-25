@@ -84,6 +84,20 @@ gf_Xls2Rdata <- function(repGF, fich) {
   Placettes$Pente[which(is.na(Placettes$Pente))] <- 0
   Placettes$CoeffPente[which(is.na(Placettes$CoeffPente))] <- 1
 
+  NbPlac <- Placettes |>
+    group_by(NumForet,Strate,Cycle) |>
+    summarise(NbrePlac = n())
+
+  # --- Cycles
+  DernierCycle = max(Cycles$Cycle)
+  PremierCycle = min(Cycles$Cycle)
+
+  périodes <- Cycles |>
+    dplyr::select(NumForet,Cycle,Annee) |>
+    mutate(période = Annee - lag(Annee)) |>
+    filter(Cycle > 1) |>
+    dplyr::select(-Annee)
+
   # --- Reges
   if (dim(Reges)[1] > 0) {
     Reges <- filter(Reges,
@@ -122,6 +136,11 @@ gf_Xls2Rdata <- function(repGF, fich) {
        Prix,CodeEcolos,CodeDurete,CodeEcorce,CodeTypoArbres,
        CoeffBOBIBE,Listes,
        file = "Tables/gfDonneesBrutes.Rdata")
+
+  save(NbPlac, DernierCycle, PremierCycle, périodes,
+       file = "Tables/Param.Rdata")
+
+
   # ---------- FIN ----------
   print("Importation termin\u00E9e. Fichier d'inventaire archiv\u00E9")
 }

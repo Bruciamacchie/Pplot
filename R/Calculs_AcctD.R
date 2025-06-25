@@ -9,7 +9,6 @@
 #' @author Bruciamacchie Max
 #' @export
 #'
-#'
 
 Calculs_AcctD <- function(df_Arbres, Cycles) {
   # df_Arbres = arbres
