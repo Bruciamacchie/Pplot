@@ -58,6 +58,7 @@ gf_Calculs <- function(fich, tauxR) {
   save(BMS, BMP, Perches, file = "Tables/gfTablesPCQM.Rdata")
   save(RegesHa, file = "Tables/RegesHa.Rdata")
   save(Arbres, file = "Tables/Arbres.Rdata")
+  save(NoteEcolos, file = "Tables/NoteEcolos.Rdata")
 
   return(arbres)
 }

@@ -13,11 +13,13 @@ dmh_split <- function(df){
     dplyr::select(NumForet:Essence,Cycle,Classe,Stade,CodeEcolo,Nha,Gha)
 
   df <- df |>
-    mutate(Codes = ifelse(Cycle == 1, str_split(CodeEcolo, " "), str_split(CodeEcolo, ","))) |>
+    dplyr::mutate(Codes = ifelse(Cycle == 1,
+                                 str_split(CodeEcolo, " "),
+                                 str_split(CodeEcolo, ", "))) |>
     dplyr::select(NumForet:Essence,Cycle,Codes,Nha,Gha) |>
-    filter(!is.na(Codes)) |>
+    dplyr::filter(!is.na(Codes)) |>
     unnest_longer(Codes) |>
-    mutate(Codes = str_squish(Codes))
+    dplyr::mutate(Codes = str_squish(Codes))
 
   return(df)
 }
