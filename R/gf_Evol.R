@@ -23,7 +23,8 @@ gf_Evol <- function (df_Arbres) {
   save(DeltaArbres, file="Tables/DeltaArbres.Rdata")
 
   #--------------- Acct placettes ---------------
-  EvolPlacettes <- AcctPlacettes(df_Arbres)
+  EvolPlacettes <- AcctPlacettes(DeltaArbres)
+  save(EvolPlacettes, file="Tables/EvolPlacettes.Rdata")
 
   return(EvolPlacettes)
 }

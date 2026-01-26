@@ -20,30 +20,18 @@ AcctArbres <- function(df_Arbres) {
     arrange(NumForet, Strate, NumPlac, NumArbre, Cycle) |>
     dplyr::select(NumForet, Strate, NumPlac, NumArbre,Essence,Classe, Cycle,Statut,
                   Diam,Nha,Gha,Vha,VcHa,VpHa, GainHa) |>
-    group_by(NumForet, Strate, NumPlac, NumArbre) |>
-    mutate(AccGper = ifelse(Statut == "Reste", Gha - lag(Gha), 0)) |>
-    mutate(AccGper = ifelse(Statut == "Nouveau", Gha, AccGper)) |>
-    mutate(AccGper = ifelse(Statut == "Coupe", Gha, AccGper)) |>
-
-    mutate(AccVper = ifelse(Statut == "Reste", Vha - lag(Vha), 0)) |>
-    mutate(AccVper = ifelse(Statut == "Nouveau", Vha, AccVper)) |>
-    mutate(AccVper = ifelse(Statut == "Coupe", Vha, AccVper)) |>
-
-    mutate(AccVcper = ifelse(Statut == "Reste", VcHa - lag(VcHa), 0)) |>
-    mutate(AccVcper = ifelse(Statut == "Nouveau", VcHa, AccVcper)) |>
-    mutate(AccVcper = ifelse(Statut == "Coupe", VcHa, AccVcper)) |>
-
-    mutate(AccVpper = ifelse(Statut == "Reste", VpHa - lag(VpHa), 0)) |>
-    mutate(AccVpper = ifelse(Statut == "Nouveau", VpHa, AccVpper)) |>
-    mutate(AccVpper = ifelse(Statut == "Coupe", VpHa, AccVpper)) |>
-
-    mutate(AccGainper = ifelse(Statut == "Reste", GainHa - lag(GainHa), 0)) |>
-    mutate(AccGainper = ifelse(Statut == "Nouveau", GainHa, AccGainper)) |>
-    mutate(AccGainper = ifelse(Statut == "Coupe", GainHa, AccGainper)) |>
-
+    group_by(NumForet, Strate, NumPlac, NumArbre,Statut) |>
+    mutate(across(c(Gha, Vha, VcHa, VpHa, GainHa),
+                  ~ if_else(Statut == "Reste", .x - lag(.x),
+                            ifelse(Statut == "Nouveau", .x, 0)),
+                  .names = "Acct{.col}Per")) |>
     mutate(Cycle = ifelse(Statut == "Coupe", Cycle+1, Cycle)) |>
-
-    filter(Cycle > 1)
+    filter(Cycle > 1) |>
+    rename(AccGper = AcctGhaPer) |>
+    rename(AccVper = AcctVhaPer) |>
+    rename(AccVcper = AcctVcHaPer) |>
+    rename(AccVpper = AcctVpHaPer) |>
+    rename(AccGainper = AcctGainHaPer)
 
   MoyAcctEssClasse <- Acct_arbres |>
     group_by(NumForet, Strate, NumPlac, Essence,Classe) |>
@@ -61,10 +49,22 @@ AcctArbres <- function(df_Arbres) {
               AccVpperE = mean(AccVpper, na.rm=T),
               AccGainperE = mean(AccGainper, na.rm=T))
 
+  Complements <- MoyAcctEssClasse |>
+    left_join(MoyAcctEss, by = join_by(NumForet, Strate, NumPlac, Essence)) |>
+    mutate(AccGperEC = ifelse(is.na(AccGperEC), AccGperE , AccGperEC)) |>
+    mutate(AccVperEC = ifelse(is.na(AccVperEC), AccVperE , AccVperEC)) |>
+    mutate(AccVcperEC = ifelse(is.na(AccVcperEC), AccVcperE , AccVcperEC)) |>
+    mutate(AccVpperEC = ifelse(is.na(AccVpperEC), AccVpperE , AccVpperEC)) |>
+    mutate(AccGainperEC = ifelse(is.na(AccGainperEC), AccGainperE , AccGainperEC))
+
   Acct_arbres <- Acct_arbres |>
-    left_join(MoyAcctEssClasse, by = join_by(NumForet, Strate, NumPlac, Essence, Classe)) |>
-    # left_join(MoyAcctEss, by = join_by(NumForet, Strate, NumPlac, Essence)) |>
-    mutate(AccVcper = ifelse(Statut == "Coupe",AccVcper + AccVcperEC/2, AccVcper))
+    left_join(Complements, by = join_by(NumForet, Strate, NumPlac, Essence, Classe)) |>
+    mutate(AccGper = ifelse(Statut == "Coupe",AccGperEC/2, AccGper)) |>
+    mutate(AccVper = ifelse(Statut == "Coupe",AccVperEC/2, AccVper)) |>
+    mutate(AccVcper = ifelse(Statut == "Coupe",AccVcperEC/2, AccVcper)) |>
+    mutate(AccVpper = ifelse(Statut == "Coupe",AccVpperEC/2, AccVpper)) |>
+    mutate(AccGainper = ifelse(Statut == "Coupe",AccGainperEC/2, AccGainper)) |>
+    dplyr::select(-c(AccGperEC:AccGainperE))
 
   return(Acct_arbres)
 }
