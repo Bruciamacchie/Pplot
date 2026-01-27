@@ -1,0 +1,187 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{colortbl, xcolor}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{fancyvrb}
+\usepackage{rotating}
+\usepackage{multido}
+\usepackage{booktabs}
+\usepackage{placeins}
+\usepackage{graphicx}
+
+\voffset -3cm
+\hoffset -2cm
+\oddsidemargin 0cm
+\evensidemargin 0cm
+\textwidth 20cm
+\topmargin 0cm
+\textheight 28cm
+\parindent 0cm
+\columnsep 0.7cm
+
+\begin{document}
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{formatcom = {\color[rgb]{0, 0, 0.56}}}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash }b{#1}}
+
+<<Preparation, echo=FALSE, warning=FALSE, message=FALSE>>=
+library(xtable)
+library(tcltk)
+library(dplyr)
+# ------------------------------------------- Paramètres
+NbLignes = 50
+# ------------------------------------------- Gestion des répertoires et import
+setwd(repGF)
+load("Tables/gfDonneesBrutes.Rdata")
+# ------------------------------------------- Extraction et organisation
+DernierCycle = max(t$Cycle, na.rm=T)
+t <- right_join(IdArbres, ValArbres, by = "IdArbre")  %>%
+  filter(NumForet==Choix & Cycle == DernierCycle) %>%
+  select(NumPlac,NumArbre,Cycle,Essence,Azimut,Dist,Diam1,Diam2,Qual,Vitalité,Type,
+         Haut,Stade,Caract1,Caract2,Coupe,Limite,NoteEcolo,Observation) %>%
+  mutate(NumArbre=as.numeric(NumArbre),
+         Azimut=round(as.numeric(Azimut),1),
+         Haut=ifelse(Haut==0,NA,Haut)) %>%
+  arrange(NumPlac,NumArbre,Azimut,Dist)
+
+tBis <- mutate(t, Cycle=Cycle+1)
+tBis[,!names(tBis) %in% c("NumPlac","NumArbre","Cycle","Essence","Azimut","Dist")] <- NA
+t <- rbind(t,tBis) %>%
+  arrange(NumPlac,NumArbre,Cycle,Azimut,Dist) %>%
+  dplyr::rename(Num=NumArbre)
+pos <- which(!names(t) %in% c("NumPlac","Essence","NoteEcolo","Observation"))
+names(t)[pos] <- paste0("\\rotatebox{90}{", names(t)[pos], "}")
+ListPlac <- unique(t$NumPlac)
+@
+
+\renewcommand{\arraystretch}{1.3} % Hauteur des lignes
+\setlength{\tabcolsep}{1pt} % Espace entre trait et texte d'une colonne
+
+<<Entete, echo=FALSE, warning=F>>=
+# ------------------------------------------- Préparation de l'entête
+# titre <- data.frame(info1 = c(NA,"Placette",NA),
+#                     milieu = c("Fiche de Remesure",NA,NA),
+#                     text2 = c("Date","Opérateurs",NA))
+# titre$info1 <- as.character(titre$info1)
+# titre[1,1] <- Forets$Nom[which(Forets$NumForet == Choix)]
+@
+
+<<Impression, echo=FALSE, results='asis', fig.pos="H", comment=F, error=F, warning=F, comment=NA>>=
+# ------------------------------------------- Impression
+# --------- Préparation d'un tableau vide
+df <- mutate(t, NumPlac=NULL)
+df[,] <- NA
+
+pb <- tkProgressBar("Progression",
+                      paste0("Edition des fiches de remesure : ",Nom1),
+                      0, 100, width=700)
+for (plac in ListPlac) {
+  # -------------- Extraction placette
+  tab <- filter(t, NumPlac==plac) %>%
+    mutate(NumPlac=NULL) %>%
+    rbind(df[1:10,]) # rajout de lignes supplémentaire
+  # tab$NumPlac <- NULL
+  # names(tab)[names(tab) %in% "NumArbre"] <- "Num"
+  nb <- dim(tab)[1]
+  # tab <- rbind(tab,df) # ---- Insertion de lignes vides
+  # nbtot <- dim(tab)[1]
+
+  # -------------- Remplissage entête
+Count = 0
+  for (j in 1:ceiling(nb/NbLignes)) {
+  NomPlac <- paste("Placette",plac,sep=" : ")
+    if (dim(tab)[1] >= NbLignes) {
+    # ----- Gestion des lignes si trop de texte ----- #
+    MaxChar <- max(c(max(nchar(tab$NoteEcolo), na.rm=T),
+                     max(nchar(tab$Observation),na.rm=T)),
+                   na.rm=T)
+    if (MaxChar > 11) {
+      NbLignes2 <- NbLignes - length(unique(which(nchar(tab$NoteEcolo) > 11 |
+                                                    nchar(tab$Observation) > 11)))
+      rws <- seq(1, NbLignes2-1, by = 2)
+      col <- rep("\\rowcolor[gray]{0.95}", length(rws))
+    } else {
+      NbLignes2 <- NbLignes
+      rws <- seq(1, NbLignes-1, by = 2)
+      col <- rep("\\rowcolor[gray]{0.85}", length(rws))
+    }  #Modif à apporter : si code ecolo trop important, sauter une ligne...
+# ----- Autre ----- #
+    temp <- tab[1:NbLignes2,]
+    tab <- tab[(NbLignes2+1):(nb-Count),]
+    Count <- Count+NbLignes2
+    } else {
+      temp <- rbind(tab,df[1:(NbLignes-dim(tab)[1]),])
+      NbLignes2 <- NbLignes
+      rws <- seq(1, NbLignes-1, by = 2)
+      col <- rep("\\rowcolor[gray]{0.95}", length(rws))
+    }
+    #     if (nb < NbLignes*j) temp[nb-(j-1)*NbLignes+1,1] <- dernierNum[i]+1 # Ecriture du numéro du nouvel arbre
+    if (j > 1)  NomPlac <- paste0(NomPlac,
+                                  " (suite ",
+                                  j-1,"/",ceiling(nb/NbLignes)-1,
+                                  ")")
+
+    # ------------------------------------------- Préparation de l'entête
+titre <- data.frame(info1 = c(Nom1,NomPlac),
+                    milieu = c("Fiche de Remesure",NA),
+                    text2 = c("              Date :","Opérateurs :"),
+                    stringsAsFactors=F)
+
+    # -------------- Impression entête
+    Format <-c("M{0cm}","L{4cm}","M{11cm}","L{4cm}")
+    print(xtable(titre,
+                 align= Format),
+          include.colnames=F,
+          # scalebox= ech,
+          include.rownames=F,
+          floating=F,
+          # latex.environments = "center",
+          table.placement="ht",
+          hline.after=NULL)
+
+
+    # -------------- Impression Données
+    Format2 <- c("|M{0cm}","|M{0.6cm}","|M{0.6cm}","|M{1.6cm}",
+                 rep("|M{0.7cm}",13),"|M{2.6cm}","|M{4cm}|")
+    # Format2 <- c(rep("|c",dim(temp)[2]),"|c|")
+    #     tp <- xtable(temp, digits=c(rep(0,4),1,rep(0,3),2,rep(0,7)))
+    #     align(tp) <- "|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l"
+    #     print(tp,add.to.row = list(pos = as.list(rws), command = col),
+    #           scalebox= ech, include.rownames=F, floating=F, hline.after=c(-1:NbLignes),
+    #           tabular.environment="tabularx",width="\\textwidth")
+cat("\\vspace{0.8cm}
+
+    \\FloatBarrier")
+    print(xtable(temp,
+                 align=Format2,
+                 digits=c(rep(0,5),1,rep(0,3),2,rep(0,9))),
+          add.to.row = list(pos = as.list(rws), command = col),
+          size="\\fontsize{9pt}{10pt}\\selectfont",
+          # scalebox= ech,
+          include.rownames=F,
+          floating=F,
+          # latex.environments = "center",
+          hline.after=c(-1:NbLignes2),
+          sanitize.text.function=function(x){return(x)})
+    # cat("\\vspace{0.5cm}
+    #
+    # \\FloatBarrier")
+    cat("\\newpage")
+  }
+info <- round(match(plac,ListPlac)/length(ListPlac)*100)
+setTkProgressBar(pb, info, paste0("Edition (",info," %)"),
+                 paste0("Edition des fiches de remesure : ",Nom1))
+}
+close(pb)
+@
+\newpage
+
+\end{document}

@@ -1,0 +1,261 @@
+---
+title: "Vérification des données d'inventaire par placettes permanentes"
+output: html_document
+---
+
+```{r Chargement, echo=F}
+# ----- Library
+librarian::shelf(tidyverse, Pplot)
+
+# file <- tk_choose.files(caption = "Choix d'une foret", filters=matrix(c(".xls",".xlsx"),1,2, byrow = T))
+# setwd(dirname(file))
+# load("../../Tables/GfDonneesBrutes.Rdata")
+load("Tables/gfDonneesBrutes.Rdata")
+```
+
+# Vérification de la base de données `r Forets$Nom`
+
+### Structure globale
+```{r}
+library(rstudioapi)
+
+fich <- selectFile()
+
+names(read_excel(fich, sheet = "Arbres", n_max = 0))
+
+```
+
+
+### Tables par tables
+
+##### AccD
+```{r Verif_AccD, echo=F, fig.height=3, fig.width=4, comment=NA}
+if (sum(is.na(AccD[,1:2]))>0) {
+  print("Problème ! Données absentes dans les colonnes NumForet et Strate qui sont des clés pour les fusions")
+}
+print("Liste des essences :")
+sort(unique(AccD$Essence))
+print(paste("Valeurs extrêmes des classes de diamètre :",range(AccD$Classe)[1],"-",range(AccD$Classe)[2]), prompt=F)
+print(paste("Valeurs extrêmes des accroissements :",range(AccD$AccD)[1],"-",range(AccD$AccD)[2]))
+
+for (i in 3:6) {
+  if (!is.numeric(AccD[,i])) {cat(paste("Attention : la variable",names(AccD)[i],"n'est pas numérique."))}
+}
+t1 <- melt(AccD[,c(1,4:5)], id="NumForet")
+ggplot(t1, aes(x=variable, y=value)) + geom_violin(fill = "grey90") + 
+  facet_wrap(~ variable, scales = "free", ncol=2)+ theme_bw()
+```
+
+##### BMSLineaires
+```{r Verif_BMSLineaires1, echo=F, fig.height=3, fig.width=4, comment=NA}
+if (dim(BMSLineaires)[1] > 0 ){
+  if (sum(is.na(BMSLineaires[,1:3]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac et Cycle qui sont des clés pour les fusions")
+  }
+  if (sum(is.na(BMSLineaires$Diam))>0) {
+    print("Attention : données absentes dans la colonne diamètre")
+    }
+  if (sum(is.na(BMSLineaires$Stade))>0) {
+    print("Attention : données absentes dans la colonne stade")
+  }
+  for (i in 6:7) {
+    if (!is.numeric(BMSLineaires[,i])) {
+      cat(paste("Attention : la variable",names(BMSLineaires)[i],"n'est pas numérique."))
+      }
+  }
+  print("Liste des transects :")
+  print(sort(unique(BMSLineaires$Transect)))
+  print("Liste des essences :")
+  print(sort(unique(BMSLineaires$Essence)))
+  print(paste("Valeurs extrêmes des diamètres :",range(BMSLineaires$Diam, na.rm=T)[1]," - ",
+              range(BMSLineaires$Diam, na.rm=T)[2]))
+  print(paste("Valeurs extrêmes des angles :",range(BMSLineaires$Angle, na.rm=T)[1]," - ",
+              range(BMSLineaires$Angle, na.rm=T)[2]))
+  print("Fréquence des modalités de contacts :")
+  print(table(BMSLineaires$Contact))
+  print("Fréquence des modalités de chablis :")
+  print(table(BMSLineaires$Chablis))
+  print("Fréquence des modalités de stades :")
+  print(table(BMSLineaires$Stade))
+}
+```
+
+```{r Verif_BMSLineaires2, fig.height=3, fig.width=4, echo=F, comment=NA}
+if (dim(BMSLineaires)[1] > 0 ){
+  t1 <- melt(BMSLineaires[,c("NumForet","Diam","Stade")], id="NumForet")
+  ggplot(t1, aes(x=variable, y=value)) + geom_violin(fill = "grey90") + 
+    facet_wrap(~ variable, scales = "free", ncol=2)+ theme_bw()
+}
+```
+
+##### Cercles
+```{r Verif_Cercles1, echo=F, fig.height=3, fig.width=4, comment=NA}
+if (dim(Cercles)[1] > 0 ){
+  if (sum(is.na(Cercles[,1:3]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac et Cycle qui sont des clés pour les fusions")
+    }
+  if (sum(is.na(Cercles$Diam))>0) {
+    print("Attention : données absentes dans la colonne diamètre")
+    }
+  if (sum(is.na(Cercles$Nbre))>0) {
+    print("Attention : données absentes dans la colonne stade")
+    }
+  print("Liste des essences :")
+  print(sort(unique(Cercles$Essence)))
+  print(paste("Valeurs extrêmes des diamètres :",range(Cercles$Diam, na.rm=T)[1]," - ",
+              range(Cercles$Diam, na.rm=T)[2]))
+  print(paste("Valeurs extrêmes des nombres :",range(Cercles$Nbre, na.rm=T)[1]," - ",
+              range(Cercles$Nbre, na.rm=T)[2]))
+}
+```
+
+```{r Cercles2, fig.height=3, fig.width=2, echo=F, comment=NA}
+if (dim(Cercles)[1] > 0 ){
+  ggplot(Cercles, aes(x=factor(0), y=Diam)) + geom_violin(fill = "grey90") + theme_bw()
+}
+```
+
+##### EssInd
+```{r Essind, echo=F}
+if (dim(EssInd)[1]==0) {
+  cat("Penser à choisir une ou plusieurs essences à individualiser")
+} else {
+  cat("Vous avez bien choisi des essences")
+}
+```
+
+##### Hauts
+```{r Hauts, echo=F}
+if (dim(Hauts)[1] > 0 ){
+  if (sum(is.na(Hauts[,1:4]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac, NumArbre et Cycle qui sont des clés pour les fusions")
+    }
+}
+```
+
+##### Arbres
+```{r IdArbres1, echo=F, fig.height=3, fig.width=4, comment=NA}
+if (dim(IdArbres)[1] > 0 ){
+  if (sum(is.na(IdArbres[,1:4]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac, NumArbre et Cycle qui sont des clés pour les fusions")
+  }
+  for (i in 6:7) {
+    if (!is.numeric(IdArbres[,i])) {
+      cat(paste("Attention : la variable",names(IdArbres)[i],"n'est pas numérique."))
+      }
+  }
+  
+  if (sum(is.na(IdArbres$Azimut))>0) {
+    print("Attention : données absentes dans la colonne azimut")
+  }
+  if (sum(is.na(IdArbres$Dist))>0) {
+    print("Attention : données absentes dans la colonne distance")
+  }
+  print("Liste des essences :")
+  print(sort(unique(IdArbres$Essence)))
+  
+  print(paste("Valeurs extrêmes des azimuts :",range(IdArbres$Azimut, na.rm=T)[1],"-",
+              range(IdArbres$Azimut, na.rm=T)[2]), prompt=F)
+  print(paste("Valeurs extrêmes des distances :",range(IdArbres$Dist, na.rm=T)[1],"-",
+              range(IdArbres$Dist, na.rm=T)[2]))
+  t1 <- melt(IdArbres[,c("NumForet","Azimut","Dist")], id="NumForet")
+  ggplot(t1, aes(x=variable, y=value)) + geom_violin(fill = "grey90") + 
+    facet_wrap(~ variable, scales = "free", ncol=2)+ theme_bw()
+  
+  if (sum(is.na(ValArbres$Diam1))>0) {
+    print("Attention : données absentes dans la colonne Diam1")
+  }
+  if (sum(is.na(ValArbres$Diam2))>0) {
+    print("Attention : données absentes dans la colonne Diam2")
+  }
+  print(paste("Valeurs extrêmes des Diam1 :",range(ValArbres$Diam1, na.rm=T)[1],"-",
+              range(ValArbres$Diam1, na.rm=T)[2]), prompt=F)
+  print(paste("Valeurs extrêmes des Diam2 :",range(ValArbres$Diam2, na.rm=T)[1],"-",
+              range(ValArbres$Diam2, na.rm=T)[2]), prompt=F)
+  print("Fréquence des modalités de qualité :")
+  print(table(ValArbres$Qual))
+}
+```
+
+Cohérence entre Diam1 et Diam2  
+```{r ValArbres, fig.height=3, fig.width=4, echo=F, comment=NA}
+ggplot(ValArbres, aes(x=Diam1, y=Diam2)) + geom_point(alpha=0.1) + geom_abline(intercept = 0, slope = 1) + theme_bw()
+```
+
+
+##### PCQM
+```{r PCQM, echo=F}
+if (dim(PCQM)[1] > 0 ){
+  if (sum(is.na(PCQM[,1:3]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac, NumArbre et Cycle qui sont des clés pour les fusions")
+    }
+}
+```
+
+
+##### Placettes
+```{r Placettes, echo=F}
+if (dim(Placettes)[1] > 0 ){
+  if (sum(is.na(Placettes[,1:3]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac, NumArbre et Cycle qui sont des clés pour les fusions")
+    }
+  if (sum(is.na(Placettes$PoidsPlacette))>0) {
+    print("Attention : données absentes dans la colonne PoidsPlacette")
+  }
+}
+SurfEchantillonnage <- sum(Placettes$PoidsPlacette)
+```
+
+
+##### Régénération
+```{r Reges, echo=F}
+if (dim(Reges)[1] > 0 ){
+  if (sum(is.na(Reges[,1:3]))>0) {
+    print("Données absentes dans les colonnes NumForet, NumPlac, NumArbre et Cycle qui sont des clés pour les fusions")
+    }
+  if (sum(is.na(Reges$SsPlac))>0) {
+    print("Attention : données absentes dans la colonne Ss.Plac")
+  }
+  print("Liste des essences :")
+  print(sort(unique(Reges$Essence)))
+}
+
+```
+
+### Cohérences entre tables
+
+##### Essences
+```{r VerifEssTarif, echo=F}
+Liste <- setdiff(unique(IdArbres$Essence), unique(Tarifs$Essence))
+if (length(Liste) > 0) {
+  print(paste("Il manque des tarifs de cubage pour les essences suivantes :", Liste))
+} else {cat("Toutes les essences ont un tarif de cubage.")}
+Liste <- setdiff(unique(IdArbres$Essence), unique(Prix$Essence))
+if (length(Liste) > 0) {
+  print(paste("Il manque des prix pour les essences suivantes :", Liste))
+} else {cat("Toutes les essences ont une mercuriale de prix.")}
+Liste <- setdiff(unique(IdArbres$Essence), unique(EssReg$Essence))
+if (length(Liste) > 0) {
+  print(paste("Il manque l'affectation à une essence regroupée pour les essences suivantes :", Liste))
+} else {cat("Toutes les essences ont été regroupées.")}
+```
+
+
+##### Tarifs
+```{r VerifTarif, echo=F}
+if (length(setdiff(unique(Tarifs$TypeTarif), c("SchR","SchI","SchL","SchTL"))) > 0) {
+  print("Les types de tarifs doivent se limiter aux suivants : SchR, SchI, SchL, SchTL")
+} else {cat("Tarifs de cubage OK.")}
+```
+
+Liste des essences n'ayant pas de tarifs IFN :
+```{r, echo=F, comment=NA}
+b <- Tarifs[which(is.na(Tarifs$TypeTarifIFN)),]
+if (dim(b)[1] > 0) {
+  unique(b$Essence)
+  } else {cat("Aucune")}
+
+```
+
+
+
